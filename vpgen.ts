@@ -2,7 +2,7 @@
 
 module vpgen {
 	
-	export function onTextChange(e) {
+	export function onGenerate(e) {
 		
 		var textArea = <HTMLInputElement>document.getElementById("inp");
 		var textAreaOut = <HTMLInputElement>document.getElementById("outp");
@@ -14,50 +14,65 @@ module vpgen {
 		
 		var errorString:string = ""; 
 		for (var lapIndex in laps) {
+			
 			var lap = laps[lapIndex];
-			if (lap.error != undefined) {
-				errorString += "line " + lap.lineNr + ": the string '" + lap.original + 
-							   "' failed with '" + lap.error + "'\n"; 
+			
+			if (lap.isError()) {
+
+				var sourceRef:SourceReference = lap.sourceRef;
+				errorString += "line " + sourceRef.lineNr + ": the string '" + sourceRef.originalLine + 
+							   "' failed with '" + sourceRef.errorMessage + "'\n"; 
+			
 			}
 		}
 		
 		if (errorString.length > 0) {
+			
 			textAreaOut.value = errorString;
+
 		} else {
+			
 			var gen:CodeGenerator = new CodeGenerator();
 			textAreaOut.value = gen.generate(laps);
+		
 		}
-		//console.log(laps);
+
 	}
 
 	class CodeGenerator {
 
 
 		generate(laps:Lap[]) : string {
-			var code:string = "dur = SUUNTO_DURATION;\n\n";
+			var code:string = "/* GENERATED CODE BY VPGEN */ \n\n";
 			var prevTime:number = -1;
-			var prevDist:number = 0;
 
 			for (var lapIndex in laps) {
 				var lap:Lap = laps[lapIndex];
-				var lapDistance = lap.distance - prevDist;
-				var lapTime = lap.time - prevTime;
-				var lapSpeed = lapDistance / lapTime;
 
-				code += "// lap: " + lapIndex  + "\n";
-				code += "if (dur > " + prevTime + " && dur <= " + lap.time + ") {\n" +
+				code += "/* lap: " + lapIndex  + " from line: " + lap.sourceRef.lineNr + " */\n";
+				code += "if (SUUNTO_DURATION > " + lap.accumulatedTime + " && SUUNTO_DURATION <= " + lap.endTime + ") {\n" +
 
-				"    // accumulated distance: " + prevDist + "m\n" +
-				"    // distance this lap: " + lapDistance + "m\n" +
-				"    // time this lap: " + lapTime + "s\n" +
-				"    // speed this lap: " + lapSpeed + " m/s\n" +
+				"    /*\n" +
+				"      accumulated distance: " + lap.accumulatedDistance + "m\n" +
+				"      distance this lap: " + lap.lapDistance + "m\n" +
+				"      time this lap: " + lap.lapTime + "s\n" +
+				"      speed this lap: " + lap.lapSpeed + " m/s\n" +
+				"     */\n\n" +
 
+				"     RESULT = (SUUNTO_DISTANCE * 1000) - (((SUUNTO_DURATION - " + lap.accumulatedTime + ") * " + 
+							   lap.lapSpeed + ") + " + lap.accumulatedDistance + ");\n" +
 
 				"}\n\n";
-
-				prevTime = lap.time;
-				prevDist = lap.distance;
 			}
+
+			code += "\n\n" +
+			"RESULT = (RESULT / 1000);\n" +
+			"if (RESULT < 0) {\n" +
+		  	"   RESULT = Math.abs(RESULT);\n" +
+			"   prefix = \"behind\";\n" +
+			"} else {\n" +
+			"   prefix = \"ahead\";\n" +
+			"}\n";
 
 
 			return code;
@@ -65,25 +80,49 @@ module vpgen {
 
 	}
 
+	class SourceReference {
+
+		originalLine:string;
+		lineNr:number;
+		errorMessage:string;
+
+		constructor(lineNr:number, originalLine:string, errorMessage:string) {
+			this.originalLine = originalLine;
+			this.lineNr = lineNr;
+			this.errorMessage = errorMessage;
+		}
+	}
 
 	class Lap {
 	
+		accumulatedDistance:number
+		accumulatedTime:number
 		distance:number
-		time:number
-		original:string
-		lineNr:number
-		error:string
+		endTime:number
+		lapDistance:number
+		lapSpeed:number;
+		lapTime:number;
+
+		sourceRef:SourceReference
 		
-		constructor(lineNr:number, original:string, distance:number,
-					time:number, err:string) {
-					
-			this.lineNr = lineNr
-			this.error = err;
-			this.original = original;
+		constructor(accumulatedDistance:number, accumulatedTime:number, 
+					distance:number, endTime:number, lapDistance:number, sourceRef:SourceReference) {
+
+			this.accumulatedDistance = accumulatedDistance;
+			this.accumulatedTime = accumulatedTime;					
 			this.distance = distance;
-			this.time = time;
+			this.endTime = endTime;
+			this.sourceRef = sourceRef;
+			this.lapDistance = lapDistance;
+			this.lapTime = endTime - accumulatedTime;
+			this.lapSpeed = lapDistance / this.lapTime;
+
 		}
 		
+		isError() : boolean {
+			return this.sourceRef.errorMessage != undefined;
+		}
+
 	}
 
 	class Parser {
@@ -94,6 +133,8 @@ module vpgen {
 
 			var laps:Lap[] = [];
 
+			var accumulatedTime:number = 0;
+			var accumulatedDistance:number = 0;
 			var lineNr:number = 0;
 			var lines = str.split("\n");
 			for (var lineIndex in lines) {
@@ -105,12 +146,16 @@ module vpgen {
 					continue;
 				}
 				
-				
+				var sourceRef:SourceReference = new SourceReference(lineNr, line, undefined);
+
+
 				var match = this.lineRegexp.exec(line);
 				
 				if (match == undefined) {
-					var lap:Lap = new Lap(lineNr, line, 0, 0,
-										  "Not in the format '00:00:00 0 (km|k|m)'");
+					
+					sourceRef.errorMessage = "Not in the format '00:00:00 0 (km|k|m)'";
+					var lap:Lap = new Lap(0, 0, 0, 0, 0, sourceRef);
+
 				} else {
 				
 					var hours:number = +match[1];
@@ -119,12 +164,19 @@ module vpgen {
 					var distance:number = +match[4];
 					var unit:string = match[5]
 
-					var time:number = hours*60*60 + minutes*60 + seconds;
+					var endTime:number = hours*60*60 + minutes*60 + seconds;
 					if (unit === "k" || unit === "km") {
 						distance = distance*1000;
 					} 
 				
-					var lap:Lap = new Lap(lineNr, line, distance, time, null);
+					var lapDistance:number = distance - accumulatedDistance;
+
+					var lap:Lap = new Lap(accumulatedDistance, accumulatedTime, 
+										  distance, endTime, lapDistance, sourceRef);
+					
+					accumulatedDistance = distance;
+					accumulatedTime = endTime;
+
 				}
 				
 				laps.push(lap);

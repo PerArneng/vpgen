@@ -3,13 +3,22 @@
 <head>
 	<title>Suunto Ambit Virtual Partner App Generator</title>
 	<script src="vpgen.js" type="text/javascript"></script>
+	<link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
 
 <div class="title">Suunto Ambit Virtual Partner App Generator</div>
+<b>Example:</b>
+<pre>
+00:04:30 1100
+00:08:50 2k
+00:12:40 3300m
+00:17:00 4k
+00:25:00 5k
+</pre>
 
 <form action="#">
-	<input type="submit" value="Generate" onclick="vpgen.onTextChange()" />
+	<input type="submit" value="Generate" onclick="vpgen.onGenerate()" />
 	<table style="width:100%;">
 		<tr>
 			<td><textarea style="width:100%;" rows="80" cols="80" id="inp" >10:20:30 10k</textarea></td>
