@@ -17,11 +17,41 @@ var vpgen;
             }
         }
 
-        textAreaOut.value = errorString;
-
-        console.log(laps);
+        if (errorString.length > 0) {
+            textAreaOut.value = errorString;
+        } else {
+            var gen = new CodeGenerator();
+            textAreaOut.value = gen.generate(laps);
+        }
+        //console.log(laps);
     }
     vpgen.onTextChange = onTextChange;
+
+    var CodeGenerator = (function () {
+        function CodeGenerator() {
+        }
+        CodeGenerator.prototype.generate = function (laps) {
+            var code = "dur = SUUNTO_DURATION;\n\n";
+            var prevTime = -1;
+            var prevDist = 0;
+
+            for (var lapIndex in laps) {
+                var lap = laps[lapIndex];
+                var lapDistance = lap.distance - prevDist;
+                var lapTime = lap.time - prevTime;
+                var lapSpeed = lapDistance / lapTime;
+
+                code += "// lap: " + lapIndex + "\n";
+                code += "if (dur > " + prevTime + " && dur <= " + lap.time + ") {\n" + "    // accumulated distance: " + prevDist + "m\n" + "    // distance this lap: " + lapDistance + "m\n" + "    // time this lap: " + lapTime + "s\n" + "    // speed this lap: " + lapSpeed + " m/s\n" + "}\n\n";
+
+                prevTime = lap.time;
+                prevDist = lap.distance;
+            }
+
+            return code;
+        };
+        return CodeGenerator;
+    })();
 
     var Lap = (function () {
         function Lap(lineNr, original, distance, time, err) {
