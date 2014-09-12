@@ -2,3 +2,9 @@
 textarea {
 	font-family: courier;
 }
+
+body {
+	background: #1c1c1c;
+	color: white;
+	font-family: helvetica;
+}
