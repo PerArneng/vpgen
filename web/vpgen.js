@@ -1,3 +1,15 @@
+/*
+Copyright 2014 Per Arneng
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 var vpgen;
 (function (vpgen) {
     function onGenerate(e) {
@@ -39,7 +51,7 @@ var vpgen;
                 var lap = laps[lapIndex];
 
                 code += "/* lap: " + lapIndex + " from line: " + lap.sourceRef.lineNr + " */\n";
-                code += "if (SUUNTO_DURATION > " + lap.accumulatedTime + " && SUUNTO_DURATION <= " + lap.endTime + ") {\n" + "    /*\n" + "      accumulated distance: " + lap.accumulatedDistance + "m\n" + "      distance this lap: " + lap.lapDistance + "m\n" + "      time this lap: " + lap.lapTime + "s\n" + "      speed this lap: " + lap.lapSpeed + " m/s\n" + "     */\n\n" + "     RESULT = (SUUNTO_DISTANCE * 1000) - (((SUUNTO_DURATION - " + lap.accumulatedTime + ") * " + lap.lapSpeed + ") + " + lap.accumulatedDistance + ");\n" + "}\n\n";
+                code += "if (SUUNTO_DURATION > " + lap.accumulatedTime + " && SUUNTO_DURATION <= " + lap.endTime + ") {\n" + "    /*\n" + "      accumulated distance: " + lap.accumulatedDistance + "m\n" + "      distance this lap: " + lap.lapDistance + "m\n" + "      time this lap: " + lap.lapTime + "s\n" + "      speed this lap: " + lap.lapSpeed + " m/s\n" + "     */\n\n" + "     RESULT = (SUUNTO_DISTANCE * 1000) -\n" + "              (((SUUNTO_DURATION - " + lap.accumulatedTime + ") *\n" + "              " + lap.lapSpeed + ") + " + lap.accumulatedDistance + ");\n" + "}\n\n";
             }
 
             code += "\n\n" + "RESULT = (RESULT / 1000);\n" + "if (RESULT < 0) {\n" + "   RESULT = Math.abs(RESULT);\n" + "   prefix = \"behind\";\n" + "} else {\n" + "   prefix = \"ahead\";\n" + "}\n";
@@ -77,7 +89,7 @@ var vpgen;
 
     var Parser = (function () {
         function Parser() {
-            this.lineRegexp = /^(\d\d):(\d\d):(\d\d)\s+(\d+)\s*(km|k|m)?$/;
+            this.lineRegexp = /^(\d\d):(\d\d):(\d\d)\s+(\d+)\s*(km|k|m)?\s*$/;
         }
         Parser.prototype.parse = function (str) {
             var laps = [];

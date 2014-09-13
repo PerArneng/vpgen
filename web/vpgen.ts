@@ -1,5 +1,18 @@
+/*
+	Copyright 2014 Per Arneng
 
+	Licensed under the Apache License, Version 2.0 (the "License");
+	you may not use this file except in compliance with the License.
+	You may obtain a copy of the License at
 
+	    http://www.apache.org/licenses/LICENSE-2.0
+
+	Unless required by applicable law or agreed to in writing, software
+	distributed under the License is distributed on an "AS IS" BASIS,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	See the License for the specific language governing permissions and
+	limitations under the License.
+*/
 module vpgen {
 	
 	export function onGenerate(e) {
@@ -59,8 +72,9 @@ module vpgen {
 				"      speed this lap: " + lap.lapSpeed + " m/s\n" +
 				"     */\n\n" +
 
-				"     RESULT = (SUUNTO_DISTANCE * 1000) - (((SUUNTO_DURATION - " + lap.accumulatedTime + ") * " + 
-							   lap.lapSpeed + ") + " + lap.accumulatedDistance + ");\n" +
+				"     RESULT = (SUUNTO_DISTANCE * 1000) -\n" + 
+				"              (((SUUNTO_DURATION - " + lap.accumulatedTime + ") *\n" +
+				"              " + lap.lapSpeed + ") + " + lap.accumulatedDistance + ");\n" +
 
 				"}\n\n";
 			}
@@ -127,7 +141,7 @@ module vpgen {
 
 	class Parser {
 
-		lineRegexp:RegExp = /^(\d\d):(\d\d):(\d\d)\s+(\d+)\s*(km|k|m)?$/; 
+		lineRegexp:RegExp = /^(\d\d):(\d\d):(\d\d)\s+(\d+)\s*(km|k|m)?\s*$/; 
 
 		parse(str:string) : Lap[] {
 

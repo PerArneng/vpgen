@@ -8,20 +8,26 @@
 <body>
 
 <div class="title">Suunto Ambit Virtual Partner App Generator</div>
-<b>Example:</b>
-<pre>
-00:04:30 1100
-00:08:50 2k
-00:12:40 3300m
-00:17:00 4k
-00:25:00 5k
-</pre>
+<div class="text">
+This application generates a "virtual partner" Suunto Ambit App that you can run against and it will tell you
+how far behind/ahead you are. Just enter your times and distances and it will generate code when you press the
+generate button. When you are finished just copy and paste the generated code in to the App Designer in the
+movescount ui.
+</div>
+
+
 
 <form action="#">
 	<input type="submit" value="Generate" onclick="vpgen.onGenerate()" />
 	<table style="width:100%;">
 		<tr>
-			<td><textarea style="width:100%;" rows="80" cols="80" id="inp" >10:20:30 10k</textarea></td>
+			<td style="width:25%;"><textarea style="width:100%;" rows="80" cols="80" id="inp" >
+00:04:30 1100
+00:08:50 2k
+00:12:40 3300m
+00:17:00 4k
+00:25:00 5k
+			</textarea></td>
 			<td><textarea style="width:100%;" rows="80" cols="80" id="outp" ></textarea></td>
 		</tr>
 	</table>
